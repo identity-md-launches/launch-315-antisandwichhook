@@ -1,0 +1,27 @@
+{
+  "kind": "univ4_hook",
+  "hook": {
+    "contract": "AntiSandwichHook",
+    "constructorArgs": [
+      "0xE03A1074c86CFeDd5C142C4F04F1a1536e203543"
+    ],
+    "permissions": [
+      "beforeSwap",
+      "afterSwap",
+      "afterSwapReturnDelta"
+    ]
+  },
+  "token": {
+    "contract": "NOSAND",
+    "name": "Nosandwich",
+    "symbol": "NOSAND",
+    "decimals": 18
+  },
+  "pool": {
+    "pairedCurrency": "0x0000000000000000000000000000000000000000",
+    "fee": 3000,
+    "tickSpacing": 60,
+    "initialPrice": "79228162514264337593543950336000"
+  },
+  "notes": "Describes src/AntiSandwichHook.sol:AntiSandwichHook and src/NOSAND.sol:NOSAND, with exported interfaces in docs/abi/AntiSandwichHook.json and docs/abi/NOSAND.json. The hook takes only IPoolManager, using the approved Sepolia address above; NOSAND has no constructor arguments. The hook inherits OpenZeppelin uniswap-hooks v1.2 AntiSandwichHook on BaseDynamicAfterFee. Its three enabled permissions encode address bits 0x00c4 under mask 0x3fff; all other flags are false. BaseHook validates the address at construction and restricts callbacks to PoolManager. The native-ETH pool has currency0 ETH and currency1 NOSAND, a static 3000 fee and tick spacing 60. initialPrice is decimal sqrtPriceX96, 1000 * 2^96, representing 1,000,000 NOSAND per ETH with 18 decimals on both currencies. This price matches test/helpers/FactoryRehearsal.sol; the approved workflow supplies no numeric opening price, so it remains the accepted local rehearsal assumption, not evidence of a live factory deployment. Initialization and liquidity callbacks are disabled. The first swap of each block checkpoints the pool and is not clipped; an empty checkpoint starts at the current tick, with at most 100 tick-spacing steps copied. Later oneForZero sells are compared with a virtual constant-liquidity opening curve; zeroForOne buys are unprotected. Non-native currency0 pools receive no protection or hook delta. Positive afterSwap unspecified deltas become ERC-6909 claims; successful donations reach current in-range LPs, otherwise claims remain for permissionless donateCollected. Clipped and Donated events expose accounting. The virtual quote omits initialized tick boundaries and can differ from executable opening-pool fills, as documented in docs/DESIGN.md and test/reproductions/OpeningCurve.t.sol.txt; this remains a source requirement conflict for independent review. An unfillable checkpoint exact-output sell reverts. Donations have no LP-age restriction and permit JIT capture; dampened arbitrage can leave prices behind other markets. There is no hook admin, setter, pause, upgrade or sweep. This technical manifest does not resolve source findings or establish launch policy, artifact attestation, admission or deployment; those remain separate review and service responsibilities."
+}
