@@ -1,0 +1,43 @@
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.26;
+
+import {HookTestBase} from "../AntiSandwichHook.t.sol";
+import {PoolKey} from "v4-core/src/types/PoolKey.sol";
+import {IHooks} from "v4-core/src/interfaces/IHooks.sol";
+import {BalanceDelta} from "v4-core/src/types/BalanceDelta.sol";
+
+contract BoundaryProbe is HookTestBase {
+    function test_openingConcentratedCurveBoundsExactOutputSell() public {
+        add(key, -60000, 60000, -1000 ether);
+        add(key, -600, 60, 1000 ether);
+        add(key, 60, 6000, 100 ether);
+        PoolKey memory referenceKey = key;
+        referenceKey.hooks = IHooks(address(0));
+        manager.initialize(referenceKey, Q96);
+        add(referenceKey, -600, 60, 1000 ether);
+        add(referenceKey, 60, 6000, 100 ether);
+        BalanceDelta opening = swap(referenceKey, false, 10 ether);
+        swap(key, true, -10 ether);
+        BalanceDelta actual = swap(key, false, 10 ether);
+        emit log_named_int("opening token input", -int256(opening.amount1()));
+        emit log_named_int("hooked token input", -int256(actual.amount1()));
+        assertGe(-int256(actual.amount1()), -int256(opening.amount1()), "input must not undercut executable opening curve");
+    }
+
+    function test_openingConcentratedCurveBoundsSell() public {
+        add(key, -60000, 60000, -1000 ether);
+        add(key, -600, 60, 1000 ether);
+        add(key, 60, 6000, 100 ether);
+        PoolKey memory referenceKey = key;
+        referenceKey.hooks = IHooks(address(0));
+        manager.initialize(referenceKey, Q96);
+        add(referenceKey, -600, 60, 1000 ether);
+        add(referenceKey, 60, 6000, 100 ether);
+        BalanceDelta opening = swap(referenceKey, false, -10 ether);
+        swap(key, true, -10 ether);
+        BalanceDelta actual = swap(key, false, -10 ether);
+        emit log_named_int("opening ETH output", opening.amount0());
+        emit log_named_int("hooked ETH output", actual.amount0());
+        assertLe(actual.amount0(), opening.amount0(), "sell must not beat executable opening curve");
+    }
+}
